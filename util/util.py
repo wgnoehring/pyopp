@@ -5,6 +5,11 @@
 __author__ = "Wolfram Georg Nöhring"
 __email__ = "wolfram.noehring@imtek.uni-freiburg.de"
 
+xyz_to_num = {"x": 0, "y":1, "z": 2, "norm": slice(0, 3), "xy": slice(0, 2), "xz": slice(0, 3, 2), "yz": slice(1, 3)}
+xyz_to_num["yx"] = xyz_to_num["xy"]
+xyz_to_num["zx"] = xyz_to_num["xz"]
+xyz_to_num["zy"] = xyz_to_num["yz"]
+
 def parse_frame_range(string):
     """Parse string specifying frame range
 
@@ -57,6 +62,3 @@ def parse_frame_range(string):
     frames = list(frames.difference(skipped_frames))
     frames.sort()
     return frames
-
-if __name__ == "__main__":
-    main()
