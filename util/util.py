@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Helper functions for parsing"""
+"""Functions that are useful for more than one postprocessing script"""
 
 __author__ = "Wolfram Georg Nöhring"
 __email__ = "wolfram.noehring@imtek.uni-freiburg.de"
