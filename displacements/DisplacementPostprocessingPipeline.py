@@ -41,7 +41,7 @@ class DisplacementPostprocessingPipeline(ABC):
 
         The exact postprocessing (e.g. root mean square displacements)
         can be implemented here. The displacements in frame or file 
-        `i` can be computed using `calculate_displacements`. If another
+        `i` can be computed using `extract_displacements`. If another
         modifier is necessary, e.g. `SpatialCorrelationModifier`, then
         `_setup_pipeline` may be modified accordingly in the subclass.
 
@@ -53,8 +53,8 @@ class DisplacementPostprocessingPipeline(ABC):
         """
         pass
 
-    def calculate_displacements(self, i, sort=False):
-        """Calculate particle displacements in frame or file `i`. 
+    def extract_displacements(self, i, sort=False):
+        """Compute and extract particle displacements in frame or file `i`. 
 
         Parameters
         ==========
