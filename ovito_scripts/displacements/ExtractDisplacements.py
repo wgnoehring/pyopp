@@ -53,7 +53,7 @@ class ExtractDisplacements(DisplacementPostprocessingPipeline):
         displacements = data.particles["Displacement"].array[selection, :]
         if self.sort_by_id:
             identifiers = data.particles["Particle Identifier"].array[selection]
-            order = np.self.argsort(identifiers)
-            return np.take(displacements, order, axis=0)
+            order = np.argsort(identifiers)
+            return np.asarray(np.take(displacements, order, axis=0))
         else:
-            return displacements
+            return np.asarray(displacements)

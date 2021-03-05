@@ -24,7 +24,6 @@ class DisplacementPostprocessingPipeline(object):
         files,
         frames=None,
         reference_frame=0,
-        periodicity=None,
         image_flags=None,
         minimum_image_convention=True,
         affine_mapping="off",
@@ -47,10 +46,6 @@ class DisplacementPostprocessingPipeline(object):
             will be computed. Otherwise, the parameter is ignored.
         reference_frame : int, default=0
             number of the reference frame
-        periodicity : list of bool, optional
-            Periodic boundary conditions, which can be used to overried existing
-            conditions. The list must contain one bool for each boundary, `True`
-            if the corresponding boundary is periodic, `False` otherwise.
         image_flags : list, optional
             Files may contain image flags, but Ovito may not recognize them.
             E.g. the image flags in Lammps files may be called `ix`, `iy`,
@@ -74,7 +69,6 @@ class DisplacementPostprocessingPipeline(object):
         self.frames = frames
         self.reference_file = (files[0],)
         self.reference_frame = reference_frame
-        self.periodicity = periodicity
         self.image_flags = image_flags
         self.minimum_image_convention = minimum_image_convention
         self.affine_mapping = affine_mapping
@@ -99,8 +93,6 @@ class DisplacementPostprocessingPipeline(object):
             self.pipeline = import_file(self.args.files[-1].as_posix())
             self.num_frames = len(self.files)
         data = self.pipeline.compute(0)
-        if self.periodicity is not None:
-            data.cell_.pbc = [bool(i) for i in self.periodicity]
         if self.image_flags is not None:
             self.pipeline.modifiers.append(
                 ComputePropertyModifier(
