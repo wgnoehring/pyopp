@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Pipeline for computing and postprocessing particle displacements"""
+import warnings
 import numpy as np
 from ovito.io import import_file
 from ovito.modifiers import (
@@ -133,3 +134,33 @@ class DisplacementPostprocessingPipeline(object):
             m.reference.compute(self.reference_frame)
         m.reference_frame = self.reference_frame
         self.pipeline.modifiers.append(m)
+
+    def _load(self, i):
+        """Load frame and compute data
+
+        Parameters
+        ----------
+        i: int
+            file `i` in the file range, or frame `i` in the frame
+            range. For example, if there is a single input file
+            (`len(self.files)==1`) and `self.frames = [0, 1, 50, 99]`, then
+            `_load(2)` will load and compute frame `50` in the input file.
+
+        Returns
+        -------
+        data : ovito.DataCollection
+        """
+        single_file = len(self.files) == 1
+        if single_file:
+            print(f"loading frame {self.frames[i]} from file {self.files[0]}")
+            data = self.pipeline.compute(self.frames[i])
+        else:
+            print(f"loading frame 0 from file {self.files[i].name}")
+            self.pipeline.source.load(self.files[i].as_posix())
+            data = self.pipeline.compute(0)
+            if self.pipeline.source.num_frames > 1:
+                message = (
+                    f"more than one frame in {self.files[i].name}, will use frame 0"
+                )
+                warnings.warn(message)
+        return data

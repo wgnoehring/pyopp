@@ -59,3 +59,25 @@ class DisplacementAutocorrelation(DisplacementPostprocessingPipeline):
             neighbor_cutoff=self.cutoff,
         )
         self.pipeline.modifiers.append(m)
+
+    def __iter__(self):
+        for i in range(self.num_frames):
+            yield self.extract(i)
+
+    def extract(self, i):
+        """Compute and extract autocorrelation function in frame or file `i`.
+
+        Parameters
+        ----------
+        i: int
+            file `i` in the file range, or frame `i` in the frame range
+
+        Returns
+        -------
+        displacements: numpy.ndarray
+            `[N, 3]` array, where `N` is the number of selected particles
+
+        """
+        pass
+        #C = data.tables['correlation-real-space']
+        #rdf = data.tables['correlation-real-space-rdf']

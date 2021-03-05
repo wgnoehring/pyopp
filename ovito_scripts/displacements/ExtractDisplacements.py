@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Exctract displacements"""
-import warnings
 import numpy as np
 from .DisplacementPostprocessingPipeline import DisplacementPostprocessingPipeline
 
@@ -43,21 +42,7 @@ class ExtractDisplacements(DisplacementPostprocessingPipeline):
             `[N, 3]` array, where `N` is the number of selected particles
 
         """
-        single_file = len(self.files) == 1
-        if single_file:
-            print(f"loading frame {self.frames[i]} from file {self.files[0]}")
-            data = self.pipeline.compute(self.frames[i])
-        else:
-            print(f"loading frame 0 from file {self.files[i].name}")
-            self.pipeline.source.load(self.files[i].as_posix())
-            data = self.pipeline.compute(0)
-            if self.pipeline.source.num_frames > 1:
-                message = (
-                    f"more than one frame in {self.files[i].name}, will use frame 0"
-                )
-                warnings.warn(message)
-        if self.periodicity is not None:
-            data.cell_.pbc = [bool(i) for i in self.periodicity]
+        data = self._load(i)
         # find particles in selection
         if self.selected_ids is not None:
             (selection,) = np.where(
