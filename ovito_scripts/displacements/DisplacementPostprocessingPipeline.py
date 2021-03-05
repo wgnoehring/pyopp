@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Pipeline for computing and postprocessing particle displacements"""
-from abc import ABC, abstractmethod
 import numpy as np
 from ovito.io import import_file
 from ovito.modifiers import (
@@ -16,10 +15,9 @@ __author__ = "Wolfram Georg Nöhring"
 __email__ = "wolfram.noehring@imtek.uni-freiburg.de"
 
 
-class DisplacementPostprocessingPipeline(ABC):
+class DisplacementPostprocessingPipeline(object):
     """Ovito pipeline that computes and postprocesses displacements."""
 
-    @abstractmethod
     def __init__(
         self,
         files,
@@ -76,29 +74,6 @@ class DisplacementPostprocessingPipeline(ABC):
         self.minimum_image_convention = (minimum_image_convention,)
         self.affine_mapping = (affine_mapping,)
         self._setup_pipeline()
-
-    def postprocess_all(self):
-        """Postprocess all frames or files."""
-        for i in range(self.num_frames):
-            postprocess_single(i)
-
-    @abstractmethod
-    def postprocess_single(self, i):
-        """Postprocess particle displacements.
-
-        The exact postprocessing (e.g. root mean square displacements)
-        can be implemented here. The displacements in frame or file
-        `i` can be computed using `extract_displacements`. If another
-        modifier is necessary, e.g. `SpatialCorrelationModifier`, then
-        `_setup_pipeline` may be modified accordingly in the subclass.
-
-        Parameters
-        ----------
-        i: int
-            file `i` in the file range, or frame `i` in the frame range
-
-        """
-        pass
 
     def _setup_pipeline(self):
         """Setup the pipeline for computing displacements.
