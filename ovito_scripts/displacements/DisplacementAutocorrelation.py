@@ -7,7 +7,6 @@ from .DisplacementPostprocessingPipeline import DisplacementPostprocessingPipeli
 __author__ = "Wolfram Georg Nöhring"
 __email__ = "wolfram.noehring@imtek.uni-freiburg.de"
 
-
 class DisplacementAutocorrelation(DisplacementPostprocessingPipeline):
     def __init__(
         self,
@@ -49,7 +48,7 @@ class DisplacementAutocorrelation(DisplacementPostprocessingPipeline):
         self.grid_spacing = grid_spacing
         self.neighbor_bins = neighbor_bins
         self.cutoff = neighbor_cutoff
-        property_name = "Displacement.{component.upper()}"
+        property_name = f"Displacement.{component.upper()}"
         m = SpatialCorrelationFunctionModifier(
             property1=property_name, property2=property_name,
             apply_window=self.apply_window,
@@ -78,6 +77,9 @@ class DisplacementAutocorrelation(DisplacementPostprocessingPipeline):
             `[N, 3]` array, where `N` is the number of selected particles
 
         """
-        pass
-        #C = data.tables['correlation-real-space']
-        #rdf = data.tables['correlation-real-space-rdf']
+        data = self._load(i)
+        data.cell_.pbc=(False,False,False)
+        C_real = data.tables['correlation-real-space']
+        C_reci = data.tables['correlation-reciprocal-space']
+        rdf = data.tables['correlation-real-space-rdf']
+        return C_real, C_reci, rdf
