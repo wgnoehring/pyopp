@@ -25,7 +25,11 @@ class ExtractDisplacements(DisplacementPostprocessingPipeline):
         self.selected_ids = selected_ids
         self.sort_by_id = sort_by_id
 
-    def postprocess_single(self, i):
+    def __iter__(self):
+        for i in range(self.num_frames):
+            yield self.extract(i)
+
+    def extract(self, i):
         """Compute and extract particle displacements in frame or file `i`.
 
         Parameters
