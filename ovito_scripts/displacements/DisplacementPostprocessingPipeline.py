@@ -26,7 +26,8 @@ class DisplacementPostprocessingPipeline(object):
         periodicity=None,
         image_flags=None,
         minimum_image_convention=True,
-        affine_mapping=None,
+        affine_mapping="off",
+        unwrap_trajectories=False,
     ):
         """Initialize DisplacementPostprocessingPipeline
 
@@ -54,15 +55,18 @@ class DisplacementPostprocessingPipeline(object):
             E.g. the image flags in Lammps files may be called `ix`, `iy`,
             and `iz`. Use this parameter to specify the column names of image
             flags in x, y, and z. Note that you must specify all flags. You can
-            also specify a number. In this case, the corresponding flag of ALL
-            particles will be set to this number. Example: `['ix', 'iy', 'iz']`
-            or `['ix', 0, 0]`.
+            also specify a number (int or str) "0" or "1". In this case, the
+            corresponding flag of ALL particles will be set to this number.
+            Example: `['ix', 'iy', 'iz']` or `['ix', '0', '0']`, `['ix', 0, 0]`.
         minimum_image_convention : bool, default=True
             Use minimum image convention when computing displacements in
             periodic configurations?
-        affine_mapping : {'off', 'current', 'reference'}
+        affine_mapping : {'off', 'current', 'reference'}, default="off"
             Choice for affine mapping before displacement calculation, see
             https://www.ovito.org/docs/current/particles.modifiers.displacement_vectors.php
+        unwrap_trajectories : bool
+            Unwrap coordinates of atoms that have crossed periodic boundaries before 
+            computing displacements
         """
 
         self.files = files
@@ -70,9 +74,10 @@ class DisplacementPostprocessingPipeline(object):
         self.reference_file = (files[0],)
         self.reference_frame = reference_frame
         self.periodicity = periodicity
-        self.image_flags = (image_flags,)
-        self.minimum_image_convention = (minimum_image_convention,)
-        self.affine_mapping = (affine_mapping,)
+        self.image_flags = image_flags
+        self.minimum_image_convention = minimum_image_convention
+        self.affine_mapping = affine_mapping
+        self.unwrap_trajectories = unwrap_trajectories
         self._setup_pipeline()
 
     def _setup_pipeline(self):
@@ -98,11 +103,13 @@ class DisplacementPostprocessingPipeline(object):
         if self.image_flags is not None:
             self.pipeline.modifiers.append(
                 ComputePropertyModifier(
-                    output_property="Periodic Image", expressions=self.image_flags
+                    output_property="Periodic Image", 
+                    expressions=tuple(str(f) for f in self.image_flags)
                 )
             )
         if single_file and self.unwrap_trajectories:
-            self.pipeline.modifiers.append(UnwrapTrajectoriesModifier())
+            m = UnwrapTrajectoriesModifier()
+            self.pipeline.modifiers.append(m)
         if not "Particle Identifier" in data.particles:
             raise KeyError("cannot compute displacements without particle identifiers")
         m = CalculateDisplacementsModifier()
