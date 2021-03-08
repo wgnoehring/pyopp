@@ -78,8 +78,10 @@ class DisplacementAutocorrelation(DisplacementPostprocessingPipeline):
 
         """
         data = self._load(i)
-        data.cell_.pbc=(False,False,False)
         C_real = data.tables['correlation-real-space']
         C_reci = data.tables['correlation-reciprocal-space']
         rdf = data.tables['correlation-real-space-rdf']
-        return C_real, C_reci, rdf
+        mean1 = data.attributes['CorrelationFunction.mean1']
+        mean2 = data.attributes['CorrelationFunction.mean2']
+        covariance = data.attributes['CorrelationFunction.covariance']
+        return C_real, C_reci, rdf, mean1, mean2, covariance
