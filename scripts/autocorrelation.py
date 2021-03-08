@@ -6,8 +6,8 @@ import click
 from textwrap import dedent
 import numpy as np
 from ovito.io import export_file
-from ovito_scripts.util import parse_frame_range
-from ovito_scripts.displacements  import DisplacementAutocorrelation
+from pyopp.util import parse_frame_range
+from pyopp.displacements  import DisplacementAutocorrelation
 
 # TODO: argument documentation
 # TODO: grid_spacing, neighbor_bins, neighbor_cutoff
