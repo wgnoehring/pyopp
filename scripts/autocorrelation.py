@@ -253,8 +253,8 @@ def postprocess(pipeline, ctx):
         """ 
     ) + context_string
     compression = "gz"
-    tar_C_real_name = f"real_autocorrelation.tar_{pipeline.component}_displacements.tar.gz"
-    tar_C_reci_name = f"reci_autocorrelation.tar_{pipeline.component}_displacements.tar.gz"
+    tar_C_real_name = f"real_autocorrelation_{pipeline.component}_displacements.tar.gz"
+    tar_C_reci_name = f"reci_autocorrelation_{pipeline.component}_displacements.tar.gz"
     tar_rdf_name = f"rdf_{pipeline.component}_displacements.tar.gz"
     tar_C_real = tarfile.open(tar_C_real_name, f"w:{compression}")
     tar_C_reci = tarfile.open(tar_C_reci_name, f"w:{compression}")
@@ -264,7 +264,14 @@ def postprocess(pipeline, ctx):
     tar_C_real.addfile(tarinfo, BytesIO(header.encode("utf8")))
     tar_C_reci.addfile(tarinfo, BytesIO(header.encode("utf8")))
     tar_rdf.addfile(tarinfo,  BytesIO(header.encode("utf8")))
-    for frame, (C_real, C_reci, rdf, mean1, mean2, covariance) in zip(pipeline. frames, pipeline):
+    if pipeline.direct_summation:
+        tar_C_real_direct_name = f"real_autocorrelation_{pipeline.component}_displacements_direct.tar.gz"
+        tar_rdf_direct_name = f"rdf_{pipeline.component}_displacements_direct.tar.gz"
+        tar_C_real_direct = tarfile.open(tar_C_real_direct_name, f"w:{compression}")
+        tar_rdf_direct = tarfile.open(tar_rdf_direct_name, f"w:{compression}")
+        tar_C_real_direct.addfile(tarinfo,  BytesIO(header.encode("utf8")))
+        tar_rdf_direct.addfile(tarinfo,  BytesIO(header.encode("utf8")))
+    for frame, (C_real, C_reci, rdf, mean, covariance, C_real_direct, rdf_direct) in zip(pipeline. frames, pipeline):
         filename = f"frame_{frame:05d}.out"
         export_file(C_real, filename, "txt/table")
         tar_C_real.add(filename, arcname=filename)
@@ -275,9 +282,19 @@ def postprocess(pipeline, ctx):
         export_file(rdf, filename, "txt/table")
         tar_rdf.add(filename, arcname=filename)
         remove(filename)
+        if pipeline.direct_summation:
+            export_file(C_real_direct, filename, "txt/table")
+            tar_C_real_direct.add(filename, arcname=filename)
+            remove(filename)
+            export_file(rdf_direct, filename, "txt/table")
+            tar_rdf_direct.add(filename, arcname=filename)
+            remove(filename)
     tar_C_real.close()
     tar_C_reci.close()
     tar_rdf.close()
+    if pipeline.direct_summation:
+        tar_C_real_direct.close()
+        tar_rdf_direct.close()
 
 if __name__ == "__main__":
     cli(obj={})
