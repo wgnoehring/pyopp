@@ -1,11 +1,13 @@
 import setuptools
+import versioneer
 
 with open("README.rst", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setuptools.setup(
     name="pyopp", 
-    version="0.1.0",
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
     author="Wolfram Georg Nöhring",
     author_email="wolfram.noehring@imtek.uni-freiburg.de",
     description="Scripts for postprocessing using Ovito",
