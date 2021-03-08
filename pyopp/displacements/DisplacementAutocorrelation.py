@@ -97,8 +97,8 @@ class DisplacementAutocorrelation(DisplacementPostprocessingPipeline):
         variance1 = data.attributes['CorrelationFunction.variance1']
         variance2 = data.attributes['CorrelationFunction.variance2']
         if self.direct_summation:
-            C_real_neighbor = data.attributes['correlation-neighbor']
-            rdf_neighbor = data.attributes['correlation-neighbor-rdf']
+            C_real_neighbor = data.tables['correlation-neighbor']
+            rdf_neighbor = data.tables['correlation-neighbor-rdf']
         # We calculate the autocorrelation, so means and variance
         # of both properties should be the same
         assert(np.isclose(mean1, mean2))
