@@ -1,4 +1,7 @@
 numpy
 ovito
 click
+sphinx
+sphinxcontrib.napoleon
 sphinx_rtd_theme
+sphinx_automodapi
