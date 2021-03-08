@@ -1,7 +1,8 @@
 pyopp
 =====
 
-This repository contains script for postprocessing using Ovito
+This repository contains script for postprocessing of atomistic simulation data
+using Ovito.
 
 Dependencies
 ------------
