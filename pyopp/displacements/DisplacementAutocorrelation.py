@@ -73,9 +73,20 @@ class DisplacementAutocorrelation(DisplacementPostprocessingPipeline):
 
         Returns
         -------
-        displacements: numpy.ndarray
-            `[N, 3]` array, where `N` is the number of selected particles
-
+        C_real : DataTable
+            Real-space autocorrelation function <u(x)u(x+dx)>.
+        C_reci : DataTable
+            Fourier-transformed autocorrelation function.
+        rdf : DataTable
+            Radial distribution function.
+        mean1  : float
+        covariance : float
+        C_real_neighbor : None or DataTable
+            Short-range part of real-space autocorrelation function,
+            calculated using direct summation (only if `direct_summation=True`)
+        rdf_neighbor : None or DataTable
+            Short-range part of radial distribution function, 
+            calculated using direct summation (only if `direct_summation=True`)
         """
         data = self._load(i)
         C_real = data.tables['correlation-real-space']
@@ -83,5 +94,18 @@ class DisplacementAutocorrelation(DisplacementPostprocessingPipeline):
         rdf = data.tables['correlation-real-space-rdf']
         mean1 = data.attributes['CorrelationFunction.mean1']
         mean2 = data.attributes['CorrelationFunction.mean2']
+        variance1 = data.attributes['CorrelationFunction.variance1']
+        variance2 = data.attributes['CorrelationFunction.variance2']
+        if self.direct_summation:
+            C_real_neighbor = data.attributes['correlation-neighbor']
+            rdf_neighbor = data.attributes['correlation-neighbor-rdf']
+        # We calculate the autocorrelation, so means and variance
+        # of both properties should be the same
+        assert(np.isclose(mean1, mean2))
+        assert(np.isclose(variance1, variance2))
+        assert(np.isclose(variance1, covariance))
         covariance = data.attributes['CorrelationFunction.covariance']
-        return C_real, C_reci, rdf, mean1, mean2, covariance
+        if self.direct_summation:
+            return C_real, C_reci, rdf, mean1, covariance, C_real_neighbor, rdf_neighbor
+        else:
+            return C_real, C_reci, rdf, mean1, covariance, None, None
