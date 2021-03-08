@@ -20,6 +20,27 @@ from pyopp.displacements  import DisplacementAutocorrelation
     )
 )
 @click.option(
+    "--grid_spacing", 
+    type=float,
+    help="Approximate size of FFT grid cell. See Ovito documentation.",
+    default="3.0",
+    show_default=True
+)
+@click.option(
+    "--neighbor_bins", 
+    type=int,
+    help="Number of bins for direct calculation of real-space corrlation function. See Ovito documentation.",
+    default="50",
+    show_default=True
+)
+@click.option(
+    "--neighbor_cutoff", 
+    type=float,
+    help="Cutoff for the direct calculation of the real-space correlation function. See Ovito documentation.",
+    default="5.0",
+    show_default=True
+)
+@click.option(
     "--affine_mapping", 
     type=click.Choice(
         ['off', 'reference', 'current'], 
@@ -74,7 +95,7 @@ from pyopp.displacements  import DisplacementAutocorrelation
     )
 )
 @click.pass_context
-def cli(ctx, component, affine_mapping, image_flags, window, direct_summation, minimum_image_convention):
+def cli(ctx, component, grid_spacing, neighbor_bins, neighbor_cutoff, affine_mapping, image_flags, window, direct_summation, minimum_image_convention):
     """Calculate autocorrelation of displacements. 
     
     This script calculates the spatial autocorrelation of 
@@ -93,6 +114,9 @@ def cli(ctx, component, affine_mapping, image_flags, window, direct_summation, m
     ctx.obj["window"] = window
     ctx.obj["direct_summation"] = direct_summation
     ctx.obj["minimum_image_convention"] = minimum_image_convention
+    ctx.obj["grid_spacing"]  = grid_spacing
+    ctx.obj["neighbor_bins"]  = neighbor_bins
+    ctx.obj["neighbor_cutoff"] = neighbor_cutoff
 
 
 @cli.command() 
@@ -127,6 +151,9 @@ def single(ctx, file, reference_frame, frames, unwrap_trajectories):
     pipeline = DisplacementAutocorrelation(
         # Autocorrelation params
         component=ctx.obj['component'],
+        grid_spacing = ctx.obj["grid_spacing"],
+        neighbor_bins = ctx.obj["neighbor_bins"],
+        neighbor_cutoff = ctx.obj["neighbor_cutoff"],
         apply_window=ctx.obj['window'],
         direct_summation=ctx.obj['direct_summation'],
         # Standard pipeline params
@@ -168,6 +195,9 @@ def multi(ctx, reference_file, files, reference_frame):
     pipeline = DisplacementAutocorrelation(
         # Autocorrelation params
         component=ctx.obj['component'],
+        grid_spacing = ctx.obj["grid_spacing"],
+        neighbor_bins = ctx.obj["neighbor_bins"],
+        neighbor_cutoff = ctx.obj["neighbor_cutoff"],
         apply_window=ctx.obj['window'],
         direct_summation=ctx.obj['direct_summation'],
         # Standard pipeline params
