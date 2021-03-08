@@ -1,5 +1,5 @@
-Dislocation tools
-=================
+pyopp
+=====
 
 This repository contains script for postprocessing using Ovito
 
