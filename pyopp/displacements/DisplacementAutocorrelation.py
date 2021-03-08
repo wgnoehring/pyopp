@@ -96,6 +96,7 @@ class DisplacementAutocorrelation(DisplacementPostprocessingPipeline):
         mean2 = data.attributes['CorrelationFunction.mean2']
         variance1 = data.attributes['CorrelationFunction.variance1']
         variance2 = data.attributes['CorrelationFunction.variance2']
+        covariance = data.attributes['CorrelationFunction.covariance']
         if self.direct_summation:
             C_real_neighbor = data.tables['correlation-neighbor']
             rdf_neighbor = data.tables['correlation-neighbor-rdf']
@@ -104,7 +105,6 @@ class DisplacementAutocorrelation(DisplacementPostprocessingPipeline):
         assert(np.isclose(mean1, mean2))
         assert(np.isclose(variance1, variance2))
         assert(np.isclose(variance1, covariance))
-        covariance = data.attributes['CorrelationFunction.covariance']
         if self.direct_summation:
             return C_real, C_reci, rdf, mean1, covariance, C_real_neighbor, rdf_neighbor
         else:
