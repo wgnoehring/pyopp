@@ -9,9 +9,6 @@ from ovito.io import export_file
 from pyopp.util import parse_frame_range
 from pyopp.displacements import DisplacementAutocorrelation
 
-# TODO: grid_spacing, neighbor_bins, neighbor_cutoff
-
-
 @click.group()
 @click.argument("component", type=click.Choice(["x", "y", "z"], case_sensitive=False))
 @click.option(
