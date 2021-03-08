@@ -9,7 +9,6 @@ from ovito.io import export_file
 from pyopp.util import parse_frame_range
 from pyopp.displacements  import DisplacementAutocorrelation
 
-# TODO: argument documentation
 # TODO: grid_spacing, neighbor_bins, neighbor_cutoff
 
 @click.group()
@@ -76,6 +75,18 @@ from pyopp.displacements  import DisplacementAutocorrelation
 )
 @click.pass_context
 def cli(ctx, component, affine_mapping, image_flags, window, direct_summation, minimum_image_convention):
+    """Calculate autocorrelation of displacements. 
+    
+    This script calculates the spatial autocorrelation of 
+    the x-, y- or z-component of atomic displacements.
+    The coordinates from which the displacements are 
+    computed can be provided in two ways. Command `single`
+    reads the coordinates from a single file, e.g. a 
+    netCDF file or a Lammps dump file. Command `multi` 
+    reads the coordinates from multiple files (e.g.
+    multiple Lammps dump or data files).
+
+    """
     ctx.obj["component"] = component
     ctx.obj["affine_mapping"] = affine_mapping
     ctx.obj["image_flags"] = image_flags
@@ -98,6 +109,17 @@ def cli(ctx, component, affine_mapping, image_flags, window, direct_summation, m
 )
 @click.pass_context
 def single(ctx, file, reference_frame, frames, unwrap_trajectories):
+    """Read coordinates from a single file.
+
+    Compute the displacements from the atomic positions  in 
+    FILE. FILE must have one of the formats supported by Ovito,
+    e.g. a netCDF file, or a Lammps dump file. It should contain
+    one or more simulation frames, where each frame must contain
+    the same number of atoms, and consistent atom identifiers.
+
+    The displacements will be computed for each frame in the range 
+    FRAMES using REFERENCE_FRAME as the reference configuration.   
+    """
     if len(ctx.obj['image_flags']) == 3:
         image_flags = ctx.obj['image_flags']
     else:
@@ -127,6 +149,21 @@ def single(ctx, file, reference_frame, frames, unwrap_trajectories):
 )
 @click.pass_context
 def multi(ctx, reference_file, files, reference_frame):
+    """Read coordinates from multiple files.
+    
+    Read atomic coordinats in FILES and compute displacements, 
+    using the atomic coordinates of simulation frame 
+    REFERENCE_FRAME in REFERENCE_FILE  as 
+    reference configuration. 
+
+    All FILES must have one of the formats supported by Ovito, e.g. a
+    netCDF file, or a Lammps dump file. Every file should contain only
+    one simulation frame. If a file contains more than one frame, the
+    displacements are calculated for frame zero. REFERENCE_FILE must
+    be an Ovito-supported format as well, but it may contain multiple
+    frames, where the desired reference configuration can be selected
+    using the option `--reference_frame`.
+    """
     file_list = [pathlib.Path(reference_file)] + [pathlib.Path(f) for f in files]
     pipeline = DisplacementAutocorrelation(
         # Autocorrelation params
