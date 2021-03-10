@@ -13,7 +13,7 @@ __author__ = "Wolfram Georg Nöhring"
 __email__ = "wolfram.noehring@imtek.uni-freiburg.de"
 
 
-class DisplacementAutocorrelation(DisplacementPostprocessingPipeline):
+class DisplacementAutocorrelationPipeline(DisplacementPostprocessingPipeline):
     def __init__(
         self,
         component,
@@ -111,7 +111,7 @@ class DisplacementAutocorrelation(DisplacementPostprocessingPipeline):
             return C_real, C_reci, rdf, mean1, covariance, None, None
 
 
-class DisplacementAutocorrelationSubvolume(DisplacementAutocorrelation):
+class DisplacementAutocorrelationSubvolumePipeline(DisplacementAutocorrelation):
     def __init__(self, up, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.normal = tuple(float(x) for x in (up == "x", up == "y", up == "z"))

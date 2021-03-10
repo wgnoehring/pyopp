@@ -14,7 +14,7 @@ from ovito.io import export_file
 from ovito import version_string as ovito_version
 from pyopp import __version__ as pyopp_version
 from pyopp.util import parse_frame_range
-from pyopp.displacements import DisplacementAutocorrelation
+from pyopp.displacements import DisplacementAutocorrelationPipeline
 
 @click.group()
 @click.argument("component", type=click.Choice(["x", "y", "z"], case_sensitive=False))
@@ -172,7 +172,7 @@ def single(ctx, file, reference_frame, frames, unwrap_trajectories):
         image_flags = ctx.obj["image_flags"]
     else:
         image_flags = None
-    pipeline = DisplacementAutocorrelation(
+    pipeline = DisplacementAutocorrelationPipeline(
         # Autocorrelation params
         component=ctx.obj["component"],
         grid_spacing=ctx.obj["grid_spacing"],
@@ -223,7 +223,7 @@ def multi(ctx, reference_file, files, reference_frame):
     using the option `--reference_frame`.
     """
     file_list = [pathlib.Path(reference_file)] + [pathlib.Path(f) for f in files]
-    pipeline = DisplacementAutocorrelation(
+    pipeline = DisplacementAutocorrelationPipeline(
         # Autocorrelation params
         component=ctx.obj["component"],
         grid_spacing=ctx.obj["grid_spacing"],

@@ -8,7 +8,7 @@ __author__ = "Wolfram Georg Nöhring"
 __email__ = "wolfram.noehring@imtek.uni-freiburg.de"
 
 
-class ExtractDisplacements(DisplacementPostprocessingPipeline):
+class DisplacementExtractionPipeline(DisplacementPostprocessingPipeline):
     def __init__(self, selected_ids=None, sort_by_id=False, *args, **kwargs):
         """Initialize ExtractDisplacements.
 
