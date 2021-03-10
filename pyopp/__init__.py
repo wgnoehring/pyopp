@@ -1,4 +1,5 @@
 import logging
+from ovito import version_string
 from ._version import get_versions
 __version__ = get_versions()['version']
 del get_versions
@@ -14,3 +15,5 @@ fh.setFormatter(formatter)
 ch.setFormatter(formatter)
 logger.addHandler(fh)
 logger.addHandler(ch)
+logger.info(f"pyopp version {__version__}")
+logger.info(f"ovito version {version_string}")
