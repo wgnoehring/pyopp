@@ -134,8 +134,14 @@ class DisplacementPostprocessingPipeline(object):
 
     def extract(self, i):
         data = self._load(i)
-        self._update_modifiers(data)
-        data = self._load(i)
+        logger.info("updating modifiers if required")
+        updated = self._update_modifiers(data)
+        if updated:
+            logger.info("reloading frame with updated modifiers")
+            data = self._load(i)
+        else:
+            logger.info("no modifier update required")
+        logger.info("extracting data")
         return self._extract(data)
 
     def _load(self, i):
@@ -169,8 +175,19 @@ class DisplacementPostprocessingPipeline(object):
         return data
 
     def _update_modifiers(self, data):
-        """Update modifiers based on current data"""
-        pass
+        """Update modifiers based on current data
+
+        Parameters
+        ----------
+        data : ovito.DataCollection
+
+        Returns
+        -------
+        updated : bool
+            Confirmation that modifiers were actually updated.
+            Necessary to decide whether frame should be reloaded.
+        """
+        return False
 
     def _extract(self, data):
         return data

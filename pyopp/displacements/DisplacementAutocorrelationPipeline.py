@@ -91,6 +91,7 @@ class DisplacementAutocorrelationPipeline(DisplacementPostprocessingPipeline):
             Short-range part of radial distribution function, 
             calculated using direct summation (only if `direct_summation=True`)
         """
+        logger.info(f"{data.particles.count} particles")
         C_real = data.tables['correlation-real-space']
         C_reci = data.tables['correlation-reciprocal-space']
         rdf = data.tables['correlation-real-space-rdf']
@@ -162,10 +163,18 @@ class DisplacementAutocorrelationSubvolumePipeline(DisplacementAutocorrelationPi
         length_along_normal, mean_length_in_plane = self._determine_distance_width(data.cell)
         self.slice_modifier.distance = 0.5 * length_along_normal 
         self.slice_modifier.slab_width = mean_length_in_plane 
+        logger.info(f"slice distance: {self.slice_modifier.distance:.2f}")
+        logger.info(f"slab width: {self.slice_modifier.slab_width:.2f}")
         target_cell = data.cell_
         target_cell[self.normal_index, self.normal_index] = mean_length_in_plane  
         target_cell[self.normal_index, -1] = (
             data.cell[self.normal_index, -1] + 0.5 * (length_along_normal - mean_length_in_plane) 
         ) 
         self.affine_transformation_modifier.target_cell = target_cell
-        # TODO: inform user about cell change, number of atoms, ...
+        logger.info(
+            "transforming simulation cell:\n" +
+            f"| {data.cell[0, 0]:7.1f} {data.cell[0, 1]:7.1f} {data.cell[0, 2]:7.1f} {data.cell[0, 3]:7.1f} |     | {target_cell[0, 0]:7.1f} {target_cell[0, 1]:7.1f} {target_cell[0, 2]:7.1f} {target_cell[0, 3]:7.1f} |\n" +
+            f"| {data.cell[1, 0]:7.1f} {data.cell[1, 1]:7.1f} {data.cell[1, 2]:7.1f} {data.cell[1, 3]:7.1f} | --> | {target_cell[1, 0]:7.1f} {target_cell[1, 1]:7.1f} {target_cell[1, 2]:7.1f} {target_cell[1, 3]:7.1f} |\n" +
+            f"| {data.cell[2, 0]:7.1f} {data.cell[2, 1]:7.1f} {data.cell[2, 2]:7.1f} {data.cell[2, 3]:7.1f} |     | {target_cell[2, 0]:7.1f} {target_cell[2, 1]:7.1f} {target_cell[2, 2]:7.1f} {target_cell[2, 3]:7.1f} |" 
+        )
+        return True
