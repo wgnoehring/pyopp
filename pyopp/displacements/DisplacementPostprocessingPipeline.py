@@ -127,6 +127,16 @@ class DisplacementPostprocessingPipeline(object):
         m.reference_frame = self.reference_frame
         self.pipeline.modifiers.append(m)
 
+    def __iter__(self):
+        for i in range(self.num_frames):
+            yield self.extract(i)
+
+    def extract(self, i):
+        data = self._load(i)
+        self._update_modifiers(data)
+        data = self._load(i)
+        return self._extract(data)
+
     def _load(self, i):
         """Load frame and compute data
 
@@ -155,4 +165,11 @@ class DisplacementPostprocessingPipeline(object):
                     f"more than one frame in {self.files[i].name}, will use frame 0"
                 )
                 warnings.warn(message)
+        return data
+
+    def _update_modifiers(self, data):
+        """Update modifiers based on current data"""
+        pass
+
+    def _extract(self, data):
         return data

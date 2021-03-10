@@ -1,3 +1,4 @@
 from .DisplacementPostprocessingPipeline import DisplacementPostprocessingPipeline
 from .DisplacementAutocorrelation import DisplacementAutocorrelation
+from .DisplacementAutocorrelation import DisplacementAutocorrelationSubvolume
 from .ExtractDisplacements import ExtractDisplacements

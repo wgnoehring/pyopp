@@ -24,25 +24,18 @@ class ExtractDisplacements(DisplacementPostprocessingPipeline):
         self.selected_ids = selected_ids
         self.sort_by_id = sort_by_id
 
-    def __iter__(self):
-        for i in range(self.num_frames):
-            yield self.extract(i)
-
-    def extract(self, i):
-        """Compute and extract particle displacements in frame or file `i`.
+    def _extract(self, data):
+        """Extract displacements of selected particles
 
         Parameters
         ----------
-        i: int
-            file `i` in the file range, or frame `i` in the frame range
+        data : ovito.DataCollection
 
         Returns
         -------
         displacements: numpy.ndarray
             `[N, 3]` array, where `N` is the number of selected particles
-
         """
-        data = self._load(i)
         # find particles in selection
         if self.selected_ids is not None:
             (selection,) = np.where(

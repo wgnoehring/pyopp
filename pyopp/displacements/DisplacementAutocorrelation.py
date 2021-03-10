@@ -1,11 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import numpy as np
-from ovito.modifiers import SpatialCorrelationFunctionModifier
+from ovito.data import SimulationCell
+from ovito.modifiers import (
+    SpatialCorrelationFunctionModifier, 
+    SliceModifier, 
+    AffineTransformationModifier
+)
 from .DisplacementPostprocessingPipeline import DisplacementPostprocessingPipeline
 
 __author__ = "Wolfram Georg Nöhring"
 __email__ = "wolfram.noehring@imtek.uni-freiburg.de"
+
 
 class DisplacementAutocorrelation(DisplacementPostprocessingPipeline):
     def __init__(
@@ -59,17 +65,12 @@ class DisplacementAutocorrelation(DisplacementPostprocessingPipeline):
         )
         self.pipeline.modifiers.append(m)
 
-    def __iter__(self):
-        for i in range(self.num_frames):
-            yield self.extract(i)
-
-    def extract(self, i):
-        """Compute and extract autocorrelation function in frame or file `i`.
+    def _extract(self, data):
+        """Extract spatial autocorrelation function data
 
         Parameters
         ----------
-        i: int
-            file `i` in the file range, or frame `i` in the frame range
+        data : ovito.DataCollection
 
         Returns
         -------
@@ -88,7 +89,6 @@ class DisplacementAutocorrelation(DisplacementPostprocessingPipeline):
             Short-range part of radial distribution function, 
             calculated using direct summation (only if `direct_summation=True`)
         """
-        data = self._load(i)
         C_real = data.tables['correlation-real-space']
         C_reci = data.tables['correlation-reciprocal-space']
         rdf = data.tables['correlation-real-space-rdf']
@@ -109,3 +109,61 @@ class DisplacementAutocorrelation(DisplacementPostprocessingPipeline):
             return C_real, C_reci, rdf, mean1, covariance, C_real_neighbor, rdf_neighbor
         else:
             return C_real, C_reci, rdf, mean1, covariance, None, None
+
+
+class DisplacementAutocorrelationSubvolume(DisplacementAutocorrelation):
+    def __init__(self, up, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.normal = tuple(float(x) for x in (up == "x", up == "y", up == "z"))
+        self.in_plane_indices, = np.where(np.logical_not(self.normal))
+        self.normal_index = np.where(self.normal)[0][0]
+        data = self._load(0)
+        self._check_cell_shape(data.cell)
+        length_along_normal, mean_length_in_plane = self._determine_distance_width(data.cell)
+        is_autocorr_mod = tuple(
+            isinstance(m, SpatialCorrelationFunctionModifier) for m in self.pipeline.modifiers
+        )
+        self.modifier_index = int(np.where(is_autocorr_mod)[0][0])
+        self.slice_modifier = SliceModifier(
+            distance=0.5*length_along_normal, 
+            slab_width=mean_length_in_plane,
+            normal=self.normal
+        )
+        self.pipeline.modifiers.insert(
+            self.modifier_index, self.slice_modifier
+        )
+        self.affine_transformation_modifier = AffineTransformationModifier(
+            relative_mode=False,
+            target_cell=data.cell[...],
+            operate_on={'cell'}
+        )
+        self.pipeline.modifiers.insert(
+            self.modifier_index+1, self.affine_transformation_modifier
+        )
+
+    def _check_cell_shape(self, cell):
+        triu_is_zero = np.all(np.isclose(np.triu(cell[:, :3], k=1), 0.0))
+        tril_is_zero = np.all(np.isclose(np.tril(cell[:, :3], k=-1), 0.0))
+        if not (triu_is_zero and tril_is_zero):
+            raise Warning("simulation cell not orthogonal")
+
+    def _determine_distance_width(self, cell):
+        length_along_normal = cell[self.normal_index, self.normal_index]
+        mean_length_in_plane = 0.5 * (
+            cell[self.in_plane_indices[0], self.in_plane_indices[0]] + 
+            cell[self.in_plane_indices[1], self.in_plane_indices[1]] 
+        )
+        return length_along_normal, mean_length_in_plane
+
+    def _update_modifiers(self, data):
+        self._check_cell_shape(data.cell)
+        length_along_normal, mean_length_in_plane = self._determine_distance_width(data.cell)
+        self.slice_modifier.distance = 0.5 * length_along_normal 
+        self.slice_modifier.slab_width = mean_length_in_plane 
+        target_cell = data.cell_
+        target_cell[self.normal_index, self.normal_index] = mean_length_in_plane  
+        target_cell[self.normal_index, -1] = (
+            data.cell[self.normal_index, -1] + 0.5 * (length_along_normal - mean_length_in_plane) 
+        ) 
+        self.affine_transformation_modifier.target_cell = target_cell
+        # TODO: inform user about cell change, number of atoms, ...
