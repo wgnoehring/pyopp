@@ -171,10 +171,8 @@ class DisplacementAutocorrelationSubvolumePipeline(DisplacementAutocorrelationPi
             data.cell[self.normal_index, -1] + 0.5 * (length_along_normal - mean_length_in_plane) 
         ) 
         self.affine_transformation_modifier.target_cell = target_cell
-        logger.info(
-            "transforming simulation cell:\n" +
-            f"| {data.cell[0, 0]:7.1f} {data.cell[0, 1]:7.1f} {data.cell[0, 2]:7.1f} {data.cell[0, 3]:7.1f} |     | {target_cell[0, 0]:7.1f} {target_cell[0, 1]:7.1f} {target_cell[0, 2]:7.1f} {target_cell[0, 3]:7.1f} |\n" +
-            f"| {data.cell[1, 0]:7.1f} {data.cell[1, 1]:7.1f} {data.cell[1, 2]:7.1f} {data.cell[1, 3]:7.1f} | --> | {target_cell[1, 0]:7.1f} {target_cell[1, 1]:7.1f} {target_cell[1, 2]:7.1f} {target_cell[1, 3]:7.1f} |\n" +
-            f"| {data.cell[2, 0]:7.1f} {data.cell[2, 1]:7.1f} {data.cell[2, 2]:7.1f} {data.cell[2, 3]:7.1f} |     | {target_cell[2, 0]:7.1f} {target_cell[2, 1]:7.1f} {target_cell[2, 2]:7.1f} {target_cell[2, 3]:7.1f} |" 
-        )
+        logger.info("transforming simulation cell:")
+        logger.info(f"| {data.cell[0, 0]:7.1f} {data.cell[0, 1]:7.1f} {data.cell[0, 2]:7.1f} {data.cell[0, 3]:7.1f} |     | {target_cell[0, 0]:7.1f} {target_cell[0, 1]:7.1f} {target_cell[0, 2]:7.1f} {target_cell[0, 3]:7.1f} |")
+        logger.info(f"| {data.cell[1, 0]:7.1f} {data.cell[1, 1]:7.1f} {data.cell[1, 2]:7.1f} {data.cell[1, 3]:7.1f} | --> | {target_cell[1, 0]:7.1f} {target_cell[1, 1]:7.1f} {target_cell[1, 2]:7.1f} {target_cell[1, 3]:7.1f} |")
+        logger.info(f"| {data.cell[2, 0]:7.1f} {data.cell[2, 1]:7.1f} {data.cell[2, 2]:7.1f} {data.cell[2, 3]:7.1f} |     | {target_cell[2, 0]:7.1f} {target_cell[2, 1]:7.1f} {target_cell[2, 2]:7.1f} {target_cell[2, 3]:7.1f} |")
         return True
