@@ -22,3 +22,5 @@ Displacements package
 
 .. automodapi:: pyopp.displacements.DisplacementAutocorrelation
    :skip: SpatialCorrelationFunctionModifier
+   :skip: SliceModifier
+   :skip: SimulationCell
