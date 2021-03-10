@@ -115,9 +115,9 @@ class DisplacementAutocorrelationPipeline(DisplacementPostprocessingPipeline):
 
 
 class DisplacementAutocorrelationSubvolumePipeline(DisplacementAutocorrelationPipeline):
-    def __init__(self, up, *args, **kwargs):
+    def __init__(self, slice_direction, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.normal = tuple(float(x) for x in (up == "x", up == "y", up == "z"))
+        self.normal = tuple(float(x) for x in (slice_direction == "x", slice_direction == "y", slice_direction == "z"))
         self.in_plane_indices, = np.where(np.logical_not(self.normal))
         self.normal_index = np.where(self.normal)[0][0]
         data = self._load(0)

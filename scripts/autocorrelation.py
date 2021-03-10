@@ -14,7 +14,7 @@ from ovito.io import export_file
 from ovito import version_string as ovito_version
 from pyopp import __version__ as pyopp_version
 from pyopp.util import parse_frame_range
-from pyopp.displacements import DisplacementAutocorrelationPipeline
+from pyopp.displacements import DisplacementAutocorrelationPipeline, DisplacementAutocorrelationSubvolumePipeline
 
 @click.group()
 @click.argument("component", type=click.Choice(["x", "y", "z"], case_sensitive=False))
@@ -91,6 +91,25 @@ from pyopp.displacements import DisplacementAutocorrelationPipeline
         """
     ),
 )
+@click.option(
+    "--subvolume",
+    type=click.Choice(["x", "y", "z"], case_sensitive=False),
+    help=dedent(
+        """\
+        Calculate autocorrelation in a (approximately) cubic subvolume. This
+        option was added for the special case of bi-axial compression, where
+        the system shrinks in two directions, and elongates in the third
+        direction. The cubic subvolume is created by slicing the configuration
+        and shrinking the simulation cell. The value of this option is the
+        direction along which the system will be sliced. For example, if this
+        option is set to "z", then the configuration will be sliced in the
+        z-direction to cut out a cubic subvolume in the center. The width of
+        the slice is equal to the mean value of the cell lengths along the x-
+        and y-directions. The simulation cell is then shrunk to enclose the
+        subvolume.
+        """
+    ),
+)
 @click.pass_context
 def cli(
     ctx,
@@ -103,6 +122,7 @@ def cli(
     window,
     direct_summation,
     minimum_image_convention,
+    subvolume
 ):
     """Calculate autocorrelation of displacements.
 
@@ -134,6 +154,7 @@ def cli(
     ctx.obj["grid_spacing"] = grid_spacing
     ctx.obj["neighbor_bins"] = neighbor_bins
     ctx.obj["neighbor_cutoff"] = neighbor_cutoff
+    ctx.obj["subvolume"] = subvolume
 
 
 @cli.command()
@@ -172,23 +193,43 @@ def single(ctx, file, reference_frame, frames, unwrap_trajectories):
         image_flags = ctx.obj["image_flags"]
     else:
         image_flags = None
-    pipeline = DisplacementAutocorrelationPipeline(
-        # Autocorrelation params
-        component=ctx.obj["component"],
-        grid_spacing=ctx.obj["grid_spacing"],
-        neighbor_bins=ctx.obj["neighbor_bins"],
-        neighbor_cutoff=ctx.obj["neighbor_cutoff"],
-        apply_window=ctx.obj["window"],
-        direct_summation=ctx.obj["direct_summation"],
-        # Standard pipeline params
-        files=(pathlib.Path(file),),
-        frames=frames,
-        reference_frame=reference_frame,
-        image_flags=image_flags,
-        minimum_image_convention=ctx.obj["minimum_image_convention"],
-        affine_mapping=ctx.obj["affine_mapping"],
-        unwrap_trajectories=unwrap_trajectories,
-    )
+    if ctx.obj["subvolume"] is None:
+        pipeline = DisplacementAutocorrelationPipeline(
+            # Autocorrelation params
+            component=ctx.obj["component"],
+            grid_spacing=ctx.obj["grid_spacing"],
+            neighbor_bins=ctx.obj["neighbor_bins"],
+            neighbor_cutoff=ctx.obj["neighbor_cutoff"],
+            apply_window=ctx.obj["window"],
+            direct_summation=ctx.obj["direct_summation"],
+            # Standard pipeline params
+            files=(pathlib.Path(file),),
+            frames=frames,
+            reference_frame=reference_frame,
+            image_flags=image_flags,
+            minimum_image_convention=ctx.obj["minimum_image_convention"],
+            affine_mapping=ctx.obj["affine_mapping"],
+            unwrap_trajectories=unwrap_trajectories,
+        )
+    else:
+        pipeline = DisplacementAutocorrelationSubvolumePipeline(
+            # Autocorrelation params
+            slice_direction=ctx.obj["subvolume"],
+            component=ctx.obj["component"],
+            grid_spacing=ctx.obj["grid_spacing"],
+            neighbor_bins=ctx.obj["neighbor_bins"],
+            neighbor_cutoff=ctx.obj["neighbor_cutoff"],
+            apply_window=ctx.obj["window"],
+            direct_summation=ctx.obj["direct_summation"],
+            # Standard pipeline params
+            files=(pathlib.Path(file),),
+            frames=frames,
+            reference_frame=reference_frame,
+            image_flags=image_flags,
+            minimum_image_convention=ctx.obj["minimum_image_convention"],
+            affine_mapping=ctx.obj["affine_mapping"],
+            unwrap_trajectories=unwrap_trajectories,
+        )
     ctx.obj["file"] = file
     ctx.obj["reference_frame"] = reference_frame
     ctx.obj["frames"] = frames
@@ -223,22 +264,41 @@ def multi(ctx, reference_file, files, reference_frame):
     using the option `--reference_frame`.
     """
     file_list = [pathlib.Path(reference_file)] + [pathlib.Path(f) for f in files]
-    pipeline = DisplacementAutocorrelationPipeline(
-        # Autocorrelation params
-        component=ctx.obj["component"],
-        grid_spacing=ctx.obj["grid_spacing"],
-        neighbor_bins=ctx.obj["neighbor_bins"],
-        neighbor_cutoff=ctx.obj["neighbor_cutoff"],
-        apply_window=ctx.obj["window"],
-        direct_summation=ctx.obj["direct_summation"],
-        # Standard pipeline params
-        files=file_list,
-        frames=None,
-        reference_frame=reference_frame,
-        image_flags=image_flags,
-        minimum_image_convention=ctx.obj["minimum_image_convention"],
-        affine_mapping=ctx.obj["affine_mapping"],
-    )
+    if ctx.obj["subvolume"] is None:
+        pipeline = DisplacementAutocorrelationPipeline(
+            # Autocorrelation params
+            component=ctx.obj["component"],
+            grid_spacing=ctx.obj["grid_spacing"],
+            neighbor_bins=ctx.obj["neighbor_bins"],
+            neighbor_cutoff=ctx.obj["neighbor_cutoff"],
+            apply_window=ctx.obj["window"],
+            direct_summation=ctx.obj["direct_summation"],
+            # Standard pipeline params
+            files=file_list,
+            frames=None,
+            reference_frame=reference_frame,
+            image_flags=image_flags,
+            minimum_image_convention=ctx.obj["minimum_image_convention"],
+            affine_mapping=ctx.obj["affine_mapping"],
+        )
+    else:
+        pipeline = DisplacementAutocorrelationPipeline(
+            # Autocorrelation params
+            slice_direction=ctx.obj["subvolume"],
+            component=ctx.obj["component"],
+            grid_spacing=ctx.obj["grid_spacing"],
+            neighbor_bins=ctx.obj["neighbor_bins"],
+            neighbor_cutoff=ctx.obj["neighbor_cutoff"],
+            apply_window=ctx.obj["window"],
+            direct_summation=ctx.obj["direct_summation"],
+            # Standard pipeline params
+            files=file_list,
+            frames=None,
+            reference_frame=reference_frame,
+            image_flags=image_flags,
+            minimum_image_convention=ctx.obj["minimum_image_convention"],
+            affine_mapping=ctx.obj["affine_mapping"],
+        )
     postprocess(pipeline, ctx)
 
 
