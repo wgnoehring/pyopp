@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import logging
 import numpy as np
 from ovito.data import SimulationCell
 from ovito.modifiers import (
@@ -12,6 +13,7 @@ from .DisplacementPostprocessingPipeline import DisplacementPostprocessingPipeli
 __author__ = "Wolfram Georg Nöhring"
 __email__ = "wolfram.noehring@imtek.uni-freiburg.de"
 
+logger = logging.getLogger('pyopp.displacements')
 
 class DisplacementAutocorrelationPipeline(DisplacementPostprocessingPipeline):
     def __init__(
@@ -111,7 +113,7 @@ class DisplacementAutocorrelationPipeline(DisplacementPostprocessingPipeline):
             return C_real, C_reci, rdf, mean1, covariance, None, None
 
 
-class DisplacementAutocorrelationSubvolumePipeline(DisplacementAutocorrelation):
+class DisplacementAutocorrelationSubvolumePipeline(DisplacementAutocorrelationPipeline):
     def __init__(self, up, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.normal = tuple(float(x) for x in (up == "x", up == "y", up == "z"))
@@ -145,7 +147,7 @@ class DisplacementAutocorrelationSubvolumePipeline(DisplacementAutocorrelation):
         triu_is_zero = np.all(np.isclose(np.triu(cell[:, :3], k=1), 0.0))
         tril_is_zero = np.all(np.isclose(np.tril(cell[:, :3], k=-1), 0.0))
         if not (triu_is_zero and tril_is_zero):
-            raise Warning("simulation cell not orthogonal")
+            logger.warning("simulation cell not orthogonal")
 
     def _determine_distance_width(self, cell):
         length_along_normal = cell[self.normal_index, self.normal_index]

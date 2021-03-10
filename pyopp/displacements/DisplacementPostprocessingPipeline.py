@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Pipeline for computing and postprocessing particle displacements"""
-import warnings
+import logging
 import numpy as np
 from ovito.io import import_file
 from ovito.modifiers import (
@@ -15,6 +15,7 @@ from ..util import parse_frame_range, xyz_to_num
 __author__ = "Wolfram Georg Nöhring"
 __email__ = "wolfram.noehring@imtek.uni-freiburg.de"
 
+logger = logging.getLogger('pyopp.displacements')
 
 class DisplacementPostprocessingPipeline(object):
     """Ovito pipeline that computes and postprocesses displacements."""
@@ -117,7 +118,7 @@ class DisplacementPostprocessingPipeline(object):
             raise ValueError(f"unknown affine_mapping style {affine_mapping}")
         if not single_file:
             m.reference = FileSource()
-            print(
+            logger.info(
                 "importing reference configuration: {:s}".format(
                     self.reference_file.name
                 )
@@ -154,17 +155,17 @@ class DisplacementPostprocessingPipeline(object):
         """
         single_file = len(self.files) == 1
         if single_file:
-            print(f"loading frame {self.frames[i]} from file {self.files[0]}")
+            logger.info(f"loading frame {self.frames[i]} from file {self.files[0]}")
             data = self.pipeline.compute(self.frames[i])
         else:
-            print(f"loading frame 0 from file {self.files[i].name}")
+            logger.info(f"loading frame 0 from file {self.files[i].name}")
             self.pipeline.source.load(self.files[i].as_posix())
             data = self.pipeline.compute(0)
             if self.pipeline.source.num_frames > 1:
                 message = (
                     f"more than one frame in {self.files[i].name}, will use frame 0"
                 )
-                warnings.warn(message)
+                logger.warning(message)
         return data
 
     def _update_modifiers(self, data):
