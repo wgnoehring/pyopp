@@ -158,14 +158,18 @@ class DisplacementAutocorrelationSubvolumePipeline(DisplacementAutocorrelationPi
         )
         return length_along_normal, mean_length_in_plane
 
-    def _update_modifiers(self, data):
+    def _update_modifiers_after_load(self, data):
         self._check_cell_shape(data.cell)
         length_along_normal, mean_length_in_plane = self._determine_distance_width(data.cell)
         self.slice_modifier.distance = 0.5 * length_along_normal 
         self.slice_modifier.slab_width = mean_length_in_plane 
         logger.info(f"slice distance: {self.slice_modifier.distance:.2f}")
         logger.info(f"slab width: {self.slice_modifier.slab_width:.2f}")
-        target_cell = data.cell_
+        #target_cell = data.cell_
+        target_cell = SimulationCell()
+        target_cell.pbc = data.cell.pbc
+        target_cell.is2D = data.cell.is2D
+        target_cell[:] = data.cell[:]
         target_cell[self.normal_index, self.normal_index] = mean_length_in_plane  
         target_cell[self.normal_index, -1] = (
             data.cell[self.normal_index, -1] + 0.5 * (length_along_normal - mean_length_in_plane) 
@@ -175,4 +179,8 @@ class DisplacementAutocorrelationSubvolumePipeline(DisplacementAutocorrelationPi
         logger.info(f"| {data.cell[0, 0]:7.1f} {data.cell[0, 1]:7.1f} {data.cell[0, 2]:7.1f} {data.cell[0, 3]:7.1f} |     | {target_cell[0, 0]:7.1f} {target_cell[0, 1]:7.1f} {target_cell[0, 2]:7.1f} {target_cell[0, 3]:7.1f} |")
         logger.info(f"| {data.cell[1, 0]:7.1f} {data.cell[1, 1]:7.1f} {data.cell[1, 2]:7.1f} {data.cell[1, 3]:7.1f} | --> | {target_cell[1, 0]:7.1f} {target_cell[1, 1]:7.1f} {target_cell[1, 2]:7.1f} {target_cell[1, 3]:7.1f} |")
         logger.info(f"| {data.cell[2, 0]:7.1f} {data.cell[2, 1]:7.1f} {data.cell[2, 2]:7.1f} {data.cell[2, 3]:7.1f} |     | {target_cell[2, 0]:7.1f} {target_cell[2, 1]:7.1f} {target_cell[2, 2]:7.1f} {target_cell[2, 3]:7.1f} |")
+        self.affine_transformation_modifier.enabled = True
         return True
+
+    def _update_modifiers_before_load(self):
+        self.affine_transformation_modifier.enabled = False

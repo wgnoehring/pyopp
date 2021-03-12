@@ -133,9 +133,10 @@ class DisplacementPostprocessingPipeline(object):
             yield self.extract(i)
 
     def extract(self, i):
+        self._update_modifiers_before_load()
         data = self._load(i)
         logger.info("updating modifiers if required")
-        updated = self._update_modifiers(data)
+        updated = self._update_modifiers_after_load(data)
         if updated:
             logger.info("reloading frame with updated modifiers")
             data = self._load(i)
@@ -174,7 +175,7 @@ class DisplacementPostprocessingPipeline(object):
                 logger.warning(message)
         return data
 
-    def _update_modifiers(self, data):
+    def _update_modifiers_after_load(self, data):
         """Update modifiers based on current data
 
         Parameters
@@ -186,6 +187,16 @@ class DisplacementPostprocessingPipeline(object):
         updated : bool
             Confirmation that modifiers were actually updated.
             Necessary to decide whether frame should be reloaded.
+        """
+        return False
+
+    def _update_modifiers_before_load(self):
+        """Update modifiers before computing
+
+        Returns
+        -------
+        updated : bool
+            Confirmation that modifiers were actually updated.
         """
         return False
 
