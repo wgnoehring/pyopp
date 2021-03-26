@@ -17,7 +17,7 @@ from pyopp import __version__ as pyopp_version
 from pyopp.util import parse_frame_range
 from pyopp.displacements import DisplacementAutocorrelationPipeline, DisplacementAutocorrelationSubvolumePipeline
 
-logger = logging.getLogger('pyopp.autocorrelation')
+logger = logging.getLogger('pyopp.scripts.autocorrelation')
 
 @click.group()
 @click.argument("component", type=click.Choice(["x", "y", "z"], case_sensitive=False))
@@ -324,45 +324,60 @@ def postprocess(pipeline, ctx):
         # arguments and options:
         """ 
     ) + context_string
-    archive_names = dict()
-    archives = dict()
-    archive_names["acf"] = f"real_autocorrelation_{pipeline.component}_displacements.tar"
-    archive_names["psd"] = f"reci_autocorrelation_{pipeline.component}_displacements.tar"
-    archive_names["rdf"] = f"rdf_{pipeline.component}_displacements.tar"
+    archive_name_for_tag = dict()
+    archive_name_for_tag["acf"] = f"real_autocorrelation_{pipeline.component}_displacements.tar"
+    archive_name_for_tag["psd"] = f"reci_autocorrelation_{pipeline.component}_displacements.tar"
+    archive_name_for_tag["rdf"] = f"rdf_{pipeline.component}_displacements.tar"
     if pipeline.direct_summation:
-        archive_names["acf_direct"] = f"real_autocorrelation_{pipeline.component}_displacements_direct.tar"
-        archive_names["rdf_direct"] = f"rdf_{pipeline.component}_displacements_direct.tar"
+        archive_name_for_tag["acf_direct"] = f"real_autocorrelation_{pipeline.component}_displacements_direct.tar"
+        archive_name_for_tag["rdf_direct"] = f"rdf_{pipeline.component}_displacements_direct.tar"
+    extra_header_for_tag = dict()
+    extra_header_for_tag["acf"] = '# "Distance r" C(r)\n'
+    extra_header_for_tag["psd"] = '# "Wavevector q" C(q)\n'
+    extra_header_for_tag["rdf"] = '# "Distance r" g(r)\n'
+    if pipeline.direct_summation:
+        extra_header_for_tag["acf_direct"] = '# "Distance r" "Neighbor C(r)"\n'
+        extra_header_for_tag["rdf_direct"] = '# "Distance r" "Neighbor g(r)"\n'
+    for tag, line in extra_header_for_tag.items():
+        extra_header_for_tag[tag] = "# Meaning of columns in files:\n" + line
+    archive_for_tag = dict()
     if ctx.obj["append_to_archive"]:
         mode = "a"
     else:
         mode = "w"
-    for tag, name in archive_names.items():
-        archives[tag] = tarfile.open(name, f"{mode}")
+    for tag, name in archive_name_for_tag.items():
+        archive_for_tag[tag] = tarfile.open(name, f"{mode}")
     # Write header to archives
-    tarinfo = tarfile.TarInfo('HEADER.txt')
-    tarinfo.size = len(header)
-    archives["acf"].addfile(tarinfo, BytesIO(header.encode("utf8")))
-    archives["psd"].addfile(tarinfo, BytesIO(header.encode("utf8")))
-    archives["rdf"].addfile(tarinfo, BytesIO(header.encode("utf8")))
-    if pipeline.direct_summation:
-        archives["acf_direct"].addfile(tarinfo, BytesIO(header.encode("utf8")))
-        archives["rdf_direct"].addfile(tarinfo, BytesIO(header.encode("utf8")))
-    for tag, name in archive_names.items():
-        archives[tag].close()
+    for tag, archive in archive_for_tag.items():
+        tarinfo = tarfile.TarInfo('HEADER.txt')
+        lines =  header + extra_header_for_tag[tag]
+        tarinfo.size = len(lines)
+        archive.addfile(tarinfo, BytesIO(lines.encode("utf8")))
+        archive.close()
+    statistics_file = open("mean_and_covariance.out", mode)
+    statistics_file.write(header)
+    statistics_file.write("# frame, mean, covariance\n")
+    statistics_file.close()
     for frame, (acf, psd, rdf, mean, covariance, acf_direct, rdf_direct) in zip(pipeline.frames, pipeline):
-        filename = f"frame_{frame:05d}.out"
+        filename = f"frame_{frame:05d}.npy"
+        logger.info(f"Mean of data: {mean:.12f}")
+        logger.info(f"Covariance of data: {covariance:.12f}")
+        statistics_file = open("mean_and_covariance.out", "a")
+        statistics_file.write(f"{frame:5d} {mean:.12f} {covariance:.12f}\n")
+        statistics_file.close()
         tables = (acf, psd, rdf, acf_direct, rdf_direct)
         tags = ("acf", "psd", "rdf", "acf_direct", "rdf_direct")
         for tag, table in zip(tags, tables):
             # Close archives to flush and immediately re-open in append mode.
             if table is None: continue
-            destination = archive_names[tag]
-            logger.info(f"saving results in {filename} in {destination}")
-            archives[tag] = tarfile.open(destination, f"a")
-            export_file(table, filename, "txt/table")
-            archives[tag].add(filename, arcname=filename)
+            destination = archive_name_for_tag[tag]
+            logger.info(f"adding {filename} to {destination}")
+            archive_for_tag[tag] = tarfile.open(destination, f"a")
+            #export_file(table, filename, "txt/table")
+            np.save(filename, table.xy())
+            archive_for_tag[tag].add(filename, arcname=filename)
             remove(filename)
-            archives[tag].close()
+            archive_for_tag[tag].close()
 
 if __name__ == "__main__":
     cli(obj={})
