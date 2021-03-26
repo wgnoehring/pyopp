@@ -105,9 +105,15 @@ class DisplacementAutocorrelationPipeline(DisplacementPostprocessingPipeline):
             rdf_neighbor = data.tables['correlation-neighbor-rdf']
         # We calculate the autocorrelation, so means and variance
         # of both properties should be the same
-        assert(np.isclose(mean1, mean2))
-        assert(np.isclose(variance1, variance2))
-        assert(np.isclose(variance1, covariance))
+        if not np.isclose(mean1, mean2):
+            logger.warning(f"isclose test fails: mean1={mean1:.14f} mean2={mean2:.14f}")
+        if not np.isclose(variance1, variance2):
+            logger.warning(f"isclose test fails: variance1={variance1:.14f} variance2={variance2:.14f}")
+        if not np.isclose(variance1, covariance):
+            logger.warning(f"isclose test fails: variance1={variance1:.14f} covariance={covariance:.14f}")
+        logger.info(f"variance1: {variance1:.12f}")
+        logger.info(f"variance2: {variance2:.12f}")
+        logger.info(f"covariance: {covariance:.12f}")
         if self.direct_summation:
             return C_real, C_reci, rdf, mean1, covariance, C_real_neighbor, rdf_neighbor
         else:
