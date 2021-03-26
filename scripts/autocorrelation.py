@@ -5,6 +5,7 @@ import sys
 from os import remove
 from datetime import  datetime
 from io import BytesIO 
+import logging
 import tarfile
 import pathlib
 import click
@@ -16,8 +17,17 @@ from pyopp import __version__ as pyopp_version
 from pyopp.util import parse_frame_range
 from pyopp.displacements import DisplacementAutocorrelationPipeline, DisplacementAutocorrelationSubvolumePipeline
 
+logger = logging.getLogger('pyopp.autocorrelation')
+
 @click.group()
 @click.argument("component", type=click.Choice(["x", "y", "z"], case_sensitive=False))
+@click.option(
+    "--append_to_archive",
+    type=bool,
+    help="Append to tar archives instead of overwriting them",
+    default=False,
+    show_default=True,
+)
 @click.option(
     "--grid_spacing",
     type=float,
@@ -113,6 +123,7 @@ from pyopp.displacements import DisplacementAutocorrelationPipeline, Displacemen
 @click.pass_context
 def cli(
     ctx,
+    append_to_archive,
     component,
     grid_spacing,
     neighbor_bins,
@@ -146,6 +157,7 @@ def cli(
 
     """
     ctx.obj["component"] = component
+    ctx.obj["append_to_archive"] = append_to_archive
     ctx.obj["affine_mapping"] = affine_mapping
     ctx.obj["image_flags"] = image_flags
     ctx.obj["window"] = window
@@ -312,49 +324,45 @@ def postprocess(pipeline, ctx):
         # arguments and options:
         """ 
     ) + context_string
-    compression = "gz"
-    tar_C_real_name = f"real_autocorrelation_{pipeline.component}_displacements.tar.gz"
-    tar_C_reci_name = f"reci_autocorrelation_{pipeline.component}_displacements.tar.gz"
-    tar_rdf_name = f"rdf_{pipeline.component}_displacements.tar.gz"
-    tar_C_real = tarfile.open(tar_C_real_name, f"w:{compression}")
-    tar_C_reci = tarfile.open(tar_C_reci_name, f"w:{compression}")
-    tar_rdf = tarfile.open(tar_rdf_name, f"w:{compression}")
+    archive_names = dict()
+    archives = dict()
+    archive_names["acf"] = f"real_autocorrelation_{pipeline.component}_displacements.tar"
+    archive_names["psd"] = f"reci_autocorrelation_{pipeline.component}_displacements.tar"
+    archive_names["rdf"] = f"rdf_{pipeline.component}_displacements.tar"
+    if pipeline.direct_summation:
+        archive_names["acf_direct"] = f"real_autocorrelation_{pipeline.component}_displacements_direct.tar"
+        archive_names["rdf_direct"] = f"rdf_{pipeline.component}_displacements_direct.tar"
+    if ctx.obj["append_to_archive"]:
+        mode = "a"
+    else:
+        mode = "w"
+    for tag, name in archive_names.items():
+        archives[tag] = tarfile.open(name, f"{mode}")
+    # Write header to archives
     tarinfo = tarfile.TarInfo('HEADER.txt')
     tarinfo.size = len(header)
-    tar_C_real.addfile(tarinfo, BytesIO(header.encode("utf8")))
-    tar_C_reci.addfile(tarinfo, BytesIO(header.encode("utf8")))
-    tar_rdf.addfile(tarinfo,  BytesIO(header.encode("utf8")))
+    archives["acf"].addfile(tarinfo, BytesIO(header.encode("utf8")))
+    archives["psd"].addfile(tarinfo, BytesIO(header.encode("utf8")))
+    archives["rdf"].addfile(tarinfo, BytesIO(header.encode("utf8")))
     if pipeline.direct_summation:
-        tar_C_real_direct_name = f"real_autocorrelation_{pipeline.component}_displacements_direct.tar.gz"
-        tar_rdf_direct_name = f"rdf_{pipeline.component}_displacements_direct.tar.gz"
-        tar_C_real_direct = tarfile.open(tar_C_real_direct_name, f"w:{compression}")
-        tar_rdf_direct = tarfile.open(tar_rdf_direct_name, f"w:{compression}")
-        tar_C_real_direct.addfile(tarinfo,  BytesIO(header.encode("utf8")))
-        tar_rdf_direct.addfile(tarinfo,  BytesIO(header.encode("utf8")))
-    for frame, (C_real, C_reci, rdf, mean, covariance, C_real_direct, rdf_direct) in zip(pipeline. frames, pipeline):
+        archives["acf_direct"].addfile(tarinfo, BytesIO(header.encode("utf8")))
+        archives["rdf_direct"].addfile(tarinfo, BytesIO(header.encode("utf8")))
+    for tag, name in archive_names.items():
+        archives[tag].close()
+    for frame, (acf, psd, rdf, mean, covariance, acf_direct, rdf_direct) in zip(pipeline.frames, pipeline):
         filename = f"frame_{frame:05d}.out"
-        export_file(C_real, filename, "txt/table")
-        tar_C_real.add(filename, arcname=filename)
-        remove(filename)
-        export_file(C_reci, filename, "txt/table")
-        tar_C_reci.add(filename, arcname=filename)
-        remove(filename)
-        export_file(rdf, filename, "txt/table")
-        tar_rdf.add(filename, arcname=filename)
-        remove(filename)
-        if pipeline.direct_summation:
-            export_file(C_real_direct, filename, "txt/table")
-            tar_C_real_direct.add(filename, arcname=filename)
+        tables = (acf, psd, rdf, acf_direct, rdf_direct)
+        tags = ("acf", "psd", "rdf", "acf_direct", "rdf_direct")
+        for tag, table in zip(tags, tables):
+            # Close archives to flush and immediately re-open in append mode.
+            if table is None: continue
+            destination = archive_names[tag]
+            logger.info(f"saving results in {filename} in {destination}")
+            archives[tag] = tarfile.open(destination, f"a")
+            export_file(table, filename, "txt/table")
+            archives[tag].add(filename, arcname=filename)
             remove(filename)
-            export_file(rdf_direct, filename, "txt/table")
-            tar_rdf_direct.add(filename, arcname=filename)
-            remove(filename)
-    tar_C_real.close()
-    tar_C_reci.close()
-    tar_rdf.close()
-    if pipeline.direct_summation:
-        tar_C_real_direct.close()
-        tar_rdf_direct.close()
+            archives[tag].close()
 
 if __name__ == "__main__":
     cli(obj={})
