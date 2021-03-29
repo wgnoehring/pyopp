@@ -128,13 +128,13 @@ class DisplacementAutocorrelationSubvolumePipeline(DisplacementAutocorrelationPi
         self.normal_index = np.where(self.normal)[0][0]
         data = self._load(0)
         self._check_cell_shape(data.cell)
-        length_along_normal, mean_length_in_plane = self._determine_distance_width(data.cell)
+        length_along_normal, mean_length_in_plane, origin_along_normal = self._determine_distance_width(data.cell)
         is_autocorr_mod = tuple(
             isinstance(m, SpatialCorrelationFunctionModifier) for m in self.pipeline.modifiers
         )
         self.modifier_index = int(np.where(is_autocorr_mod)[0][0])
         self.slice_modifier = SliceModifier(
-            distance=0.5*length_along_normal, 
+            distance=0.5*length_along_normal+origin_along_normal, 
             slab_width=mean_length_in_plane,
             normal=self.normal
         )
@@ -162,13 +162,15 @@ class DisplacementAutocorrelationSubvolumePipeline(DisplacementAutocorrelationPi
             cell[self.in_plane_indices[0], self.in_plane_indices[0]] + 
             cell[self.in_plane_indices[1], self.in_plane_indices[1]] 
         )
-        return length_along_normal, mean_length_in_plane
+        origin_along_normal = cell[self.normal_index, -1]
+        return length_along_normal, mean_length_in_plane, origin_along_normal
 
     def _update_modifiers_after_load(self, data):
         self._check_cell_shape(data.cell)
-        length_along_normal, mean_length_in_plane = self._determine_distance_width(data.cell)
-        self.slice_modifier.distance = 0.5 * length_along_normal 
+        length_along_normal, mean_length_in_plane, origin_along_normal = self._determine_distance_width(data.cell)
+        self.slice_modifier.distance = 0.5 * length_along_normal + origin_along_normal
         self.slice_modifier.slab_width = mean_length_in_plane 
+        logger.info(f"origin along normal: {origin_along_normal:.2f}")
         logger.info(f"slice distance: {self.slice_modifier.distance:.2f}")
         logger.info(f"slab width: {self.slice_modifier.slab_width:.2f}")
         #target_cell = data.cell_
