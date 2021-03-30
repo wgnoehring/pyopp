@@ -115,9 +115,9 @@ class DisplacementAutocorrelationPipeline(DisplacementPostprocessingPipeline):
         logger.info(f"variance2: {variance2:.12f}")
         logger.info(f"covariance: {covariance:.12f}")
         if self.direct_summation:
-            return C_real, C_reci, rdf, mean1, covariance, C_real_neighbor, rdf_neighbor
+            return C_real, C_reci, rdf, mean1, covariance, C_real_neighbor, rdf_neighbor, data
         else:
-            return C_real, C_reci, rdf, mean1, covariance, None, None
+            return C_real, C_reci, rdf, mean1, covariance, None, None, data
 
 
 class DisplacementAutocorrelationSubvolumePipeline(DisplacementAutocorrelationPipeline):
